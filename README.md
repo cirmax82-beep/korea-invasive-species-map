@@ -7,6 +7,9 @@
 
 서버나 회원 관리가 필요 없는 정적 웹사이트라서, 파일을 웹 호스팅에 올리기만 하면 누구나 볼 수 있습니다.
 
+- **공개 지도**: https://cirmax82-beep.github.io/korea-invasive-species-map/
+- **참여 안내 바로가기**(홍보용): https://cirmax82-beep.github.io/korea-invasive-species-map/#join
+
 ## 화면
 
 | 화면 | 내용 |
@@ -31,7 +34,22 @@ python -m http.server 5173
 2. **실시간 반영**: 앱이 열리면 기본 자료 이후 새로 올라오거나 상태가 바뀐(확인 중 → 검증됨 등) iNaturalist 관찰만 받아 합치고, 10분마다 다시 확인합니다. 상단 ‘실시간’ 표시를 누르면 바로 확인합니다.
 3. GBIF에는 iNaturalist의 검증 기록도 들어 있으므로, GBIF 스냅샷에서는 iNaturalist 자료를 빼서 중복을 막습니다.
 
-기본 자료는 가끔 새로 만들어 주면 좋습니다(시민 관찰은 하루~일주일에 한 번, 기관 기록은 한 달에 한 번 정도).
+## 자동 갱신과 배포 (GitHub Actions)
+
+`.github/workflows/pages.yml`이 기본 자료를 자동으로 새로 받고 사이트를 다시 배포합니다.
+
+| 언제 | 하는 일 |
+|---|---|
+| 매일 03:00 (한국 시간) | iNaturalist 시민 관찰을 새로 받아, 바뀌었으면 커밋하고 배포 |
+| 매주 월요일 03:30 | 위에 더해 GBIF 기관·타 플랫폼 기록도 새로 받음 |
+| `main`에 직접 올릴 때 | 자료 갱신 없이 바로 배포 |
+| 저장소 Actions 탭 → ‘자료 갱신과 배포’ → Run workflow | 둘 다 지금 바로 갱신 후 배포 |
+
+외부 API가 잠시 실패하면 그날은 기존 자료로 배포됩니다. 진행 상황과 실패 알림은 저장소의 Actions 탭에서 볼 수 있습니다.
+
+> GitHub는 저장소에 60일 동안 활동이 없으면 예약 실행(schedule)을 멈춥니다. 자동 갱신 커밋이 계속 생기면 보통 유지되지만, 멈췄다는 메일을 받으면 Actions 탭에서 다시 켜 주세요.
+
+내 컴퓨터에서 직접 새로 받으려면:
 
 ```bash
 python tools/inat_snapshot.py
@@ -40,10 +58,6 @@ python tools/inat_snapshot.py
 ```bash
 python tools/gbif_snapshot.py
 ```
-
-## 공개 웹사이트로 올리기
-
-정적 파일이라 GitHub Pages, Netlify 같은 무료 호스팅에 그대로 올리면 됩니다. 올릴 파일은 `index.html`, `css/`, `js/`, `vendor/`, `data/`입니다(`tools/`, `실행.bat`, `README.md`는 같이 올려도 무방).
 
 > claude.ai 아티팩트(공유 링크)로는 공개하지 마세요. 그곳은 보안 정책상 iNaturalist 실시간 자료와 사진, 지도 타일을 불러올 수 없습니다.
 
