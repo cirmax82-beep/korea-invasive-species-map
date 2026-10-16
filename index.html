@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>교란생물 종합관리</title>
+  <meta name="description" content="시민이 iNaturalist에 올린 관찰과 기관 기록으로 만드는 전국 생태계교란 생물 분포지도입니다. 사진 한 장으로 참여할 수 있습니다." />
+  <meta property="og:title" content="교란생물 종합관리 · 시민 분포지도" />
+  <meta property="og:description" content="교란생물을 보면 사진 한 장으로 알려 주세요. 모두의 관찰이 모여 전국 분포지도가 됩니다." />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='15' fill='%232b8a3e'/%3E%3Cpath d='M9 20c3-9 10-11 14-11-1 7-5 13-14 11z' fill='%23fff'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap" />
+  <link rel="stylesheet" href="vendor/leaflet.css" />
+  <link rel="stylesheet" href="vendor/MarkerCluster.css" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="15" fill="currentColor"/><path d="M9 20c3-9 10-11 14-11-1 7-5 13-14 11z" fill="#fff"/></svg>
+      </span>
+      <div class="brand-text">
+        <strong>교란생물 종합관리</strong>
+        <small>시민이 함께 만드는 생태계교란 생물 분포지도</small>
+      </div>
+    </div>
+    <nav class="tabs" role="tablist">
+      <button class="tab active" data-view="map" role="tab">분포지도</button>
+      <button class="tab" data-view="species" role="tab">종 도감</button>
+      <button class="tab" data-view="stats" role="tab">통계</button>
+      <button class="tab tab-cta" data-view="join" role="tab">참여하기</button>
+      <button class="tab" data-view="about" role="tab">자료 안내</button>
+    </nav>
+    <button class="sync-chip" id="live-chip" data-state="loading" aria-live="polite"></button>
+  </header>
+
+  <main>
+    <!-- 분포지도 -->
+    <section class="view active" id="view-map">
+      <aside class="sidebar" id="map-sidebar">
+        <div class="sidebar-head">
+          <h2>지도 필터</h2>
+          <button class="icon-btn only-mobile" id="sidebar-close" aria-label="필터 닫기">✕</button>
+        </div>
+
+        <div class="field-group">
+          <label class="group-label">표시 방식</label>
+          <div class="segmented" id="mode-switch">
+            <button data-mode="cluster" class="active">관찰 지점</button>
+            <button data-mode="heat">열지도</button>
+            <button data-mode="choropleth">시·도별</button>
+          </div>
+          <div class="segmented small" id="metric-switch" hidden>
+            <button data-metric="records" class="active">기록 수</button>
+            <button data-metric="species">출현 종 수</button>
+          </div>
+        </div>
+
+        <div class="field-group">
+          <div class="group-label-row">
+            <label class="group-label">기록 종류</label>
+            <span class="link-row"><button class="link" id="only-verified">검증된 것만</button> · <button class="link" id="all-sources">전체</button></span>
+          </div>
+          <label class="check src-check"><input type="checkbox" id="src-verified" checked />
+            <span class="pt pt-verified" style="--c:var(--primary)"></span>
+            <span class="src-label">시민 관찰 · 검증됨<small>여러 참여자가 종을 확인</small></span>
+            <span class="src-count" data-src-count="verified">-</span></label>
+          <label class="check src-check"><input type="checkbox" id="src-pending" checked />
+            <span class="pt pt-pending" style="--c:var(--primary)"></span>
+            <span class="src-label">시민 관찰 · 확인 중<small>아직 확인을 기다리는 관찰</small></span>
+            <span class="src-count" data-src-count="pending">-</span></label>
+          <label class="check src-check"><input type="checkbox" id="src-gbif" checked />
+            <span class="pt pt-gbif" style="--c:var(--primary)"></span>
+            <span class="src-label">기관·타 플랫폼 기록<small>국립생태원, 네이처링 등 (GBIF)</small></span>
+            <span class="src-count" data-src-count="gbif">-</span></label>
+        </div>
+
+        <div class="field-group">
+          <label class="group-label">관찰 연도</label>
+          <div class="year-row">
+            <select id="year-from" aria-label="시작 연도"></select>
+            <span>~</span>
+            <select id="year-to" aria-label="끝 연도"></select>
+          </div>
+          <div class="chip-row">
+            <button class="chip" data-years="1">올해</button>
+            <button class="chip" data-years="5">최근 5년</button>
+            <button class="chip" data-years="all">전체</button>
+          </div>
+        </div>
+
+        <div class="field-group">
+          <label class="group-label">분류군</label>
+          <div class="chip-row" id="group-chips"></div>
+        </div>
+
+        <div class="field-group grow">
+          <div class="group-label-row">
+            <label class="group-label">종 선택</label>
+            <span class="link-row">
+              <button class="link" id="sp-all">전체</button> ·
+              <button class="link" id="sp-none">해제</button>
+            </span>
+          </div>
+          <input type="search" id="sp-search" class="input" placeholder="종 이름·학명 검색" />
+          <div class="species-list" id="species-list"></div>
+        </div>
+      </aside>
+
+      <div class="map-wrap">
+        <div id="map"></div>
+        <div class="map-toolbar">
+          <button class="btn btn-light only-mobile" id="sidebar-open">☰ 필터</button>
+          <a class="btn btn-primary" href="#join" data-goto="join">📷 발견했어요 · 참여하기</a>
+        </div>
+        <div class="map-summary" id="map-summary"></div>
+        <div class="load-banner" id="load-banner" hidden>
+          <div class="load-text" id="load-text">관찰 자료 여는 중…</div>
+          <div class="progress"><div class="progress-bar" id="load-bar"></div></div>
+        </div>
+        <aside class="region-panel" id="region-panel" hidden></aside>
+      </div>
+    </section>
+
+    <!-- 종 도감 -->
+    <section class="view" id="view-species">
+      <div class="page">
+        <div class="page-head">
+          <div>
+            <h1>생태계교란 생물 도감</h1>
+            <p class="muted" id="species-sub"></p>
+          </div>
+        </div>
+        <div class="toolbar">
+          <input type="search" id="catalog-search" class="input" placeholder="종 이름·학명·원산지 검색" />
+          <div class="chip-row" id="catalog-groups"></div>
+          <select id="catalog-sort" class="input narrow" aria-label="정렬">
+            <option value="group">분류군순</option>
+            <option value="citizen">시민 관찰 많은순</option>
+            <option value="records">전체 기록 많은순</option>
+            <option value="regions">출현 시·도 많은순</option>
+            <option value="year">지정 연도순</option>
+            <option value="name">가나다순</option>
+          </select>
+        </div>
+        <div class="card-grid" id="catalog-grid"></div>
+        <p class="note">※ 지정 목록은 위키백과·언론 보도를 종합한 것으로, 법적 기준은 환경부 「생태계교란 생물 지정 고시」 최신본입니다.</p>
+      </div>
+    </section>
+
+    <!-- 통계 -->
+    <section class="view" id="view-stats">
+      <div class="page">
+        <div class="page-head">
+          <div>
+            <h1>전국 분포 통계</h1>
+            <p class="muted">시·도별, 분류군별, 시기별 교란생물 기록 현황입니다.</p>
+          </div>
+          <div class="actions">
+            <div class="segmented" id="stats-source">
+              <button data-src="all" class="active">전체</button>
+              <button data-src="citizen">시민 관찰</button>
+              <button data-src="verified">검증된 시민 관찰</button>
+              <button data-src="gbif">기관·타 플랫폼</button>
+            </div>
+          </div>
+        </div>
+        <div class="kpi-row" id="stats-kpis"></div>
+        <div class="panel-grid">
+          <div class="panel"><h3>시·도별 기록</h3><div id="chart-region"></div></div>
+          <div class="panel"><h3>시·도별 출현 종 수</h3><div id="chart-region-species"></div></div>
+          <div class="panel"><h3>분류군별 기록</h3><div id="chart-group"></div></div>
+          <div class="panel"><h3>연도별 기록 <small class="muted">(최근 20년)</small></h3><div id="chart-year"></div></div>
+        </div>
+        <div class="panel">
+          <h3>월별 시민 관찰 <small class="muted">(최근 24개월, 관찰한 날 기준)</small></h3>
+          <div id="chart-month"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head">
+            <h3>시·도 × 종 분포 현황표</h3>
+            <button class="btn btn-light btn-sm" id="matrix-csv">CSV 내려받기</button>
+          </div>
+          <p class="muted small">칸의 숫자는 기록 수이며, 색이 진할수록 많습니다. 빈칸은 기록이 없는 지역입니다. 기록이 없다고 그 지역에 없다는 뜻은 아닙니다.</p>
+          <div class="matrix-wrap" id="matrix"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 참여하기 -->
+    <section class="view" id="view-join">
+      <div class="page join-page">
+        <div class="join-hero">
+          <div class="join-hero-text">
+            <h1>교란생물을 보면,<br>사진 한 장으로 알려 주세요</h1>
+            <p>여러분이 올린 관찰이 모여 전국 교란생물 지도가 됩니다. 올라온 사진은 다른 참여자와 전문가가 함께 보고 종을 확인해, 믿을 수 있는 기록으로 남습니다.</p>
+            <div class="actions">
+              <a class="btn btn-primary btn-lg" href="https://play.google.com/store/apps/details?id=org.inaturalist.android" target="_blank" rel="noopener">안드로이드 앱 받기</a>
+              <a class="btn btn-primary btn-lg" href="https://apps.apple.com/app/inaturalist/id421397028" target="_blank" rel="noopener">아이폰 앱 받기</a>
+              <a class="btn btn-light btn-lg" href="https://www.inaturalist.org/observations/upload" target="_blank" rel="noopener">컴퓨터로 올리기</a>
+            </div>
+            <p class="muted small">iNaturalist(아이내추럴리스트)는 전 세계 시민이 함께 쓰는 무료 생물 관찰 앱입니다. 한국어로 쓸 수 있습니다.</p>
+          </div>
+          <div class="kpi-row join-kpis" id="join-kpis"></div>
+        </div>
+
+        <div class="panel">
+          <h2 class="section-title">참여 방법</h2>
+          <ol class="steps">
+            <li><b>앱 설치와 가입</b><span>iNaturalist 앱을 설치하고 가입합니다. 휴대폰 위치 서비스를 켜 두면 관찰 위치가 자동으로 기록됩니다.</span></li>
+            <li><b>사진 찍기</b><span>식물은 전체 모습과 잎·꽃·열매를, 동물은 몸 전체와 특징이 보이게 여러 장 찍으면 확인이 빨라집니다.</span></li>
+            <li><b>올리기</b><span>이름을 몰라도 괜찮습니다. 앱이 추천하는 이름을 고르거나 ‘식물’, ‘곤충’처럼 넓게 적어도 다른 참여자가 확인해 줍니다.</span></li>
+            <li><b>지도에서 확인</b><span>올린 관찰은 10분 안에 이 지도에 ‘확인 중’(○)으로 나타나고, 확인 의견이 모이면 ‘검증됨’(●)으로 바뀝니다.</span></li>
+          </ol>
+        </div>
+
+        <div class="panel-grid">
+          <div class="panel">
+            <h2 class="section-title">어떻게 검증하나요?</h2>
+            <ul class="plain">
+              <li>사진, 날짜, 위치가 있고 야생 개체인 관찰만 지도에 올립니다. 기르거나 심은 개체는 빠집니다.</li>
+              <li>참여자 의견의 3분의 2 이상이 같은 종으로 모이면 <b>검증됨</b>(iNaturalist ‘연구 등급’)이 됩니다.</li>
+              <li>지도와 통계에서 ‘검증된 것만’을 고르면 확인이 끝난 기록만 볼 수 있습니다.</li>
+            </ul>
+          </div>
+          <div class="panel">
+            <h2 class="section-title">종을 잘 아신다면</h2>
+            <p class="muted">확인을 기다리는 관찰에 의견을 남겨 주세요. 의견이 모일수록 지도가 정확해집니다.</p>
+            <a class="btn btn-primary" id="join-identify" href="https://www.inaturalist.org/observations/identify" target="_blank" rel="noopener">확인 돕기 (iNaturalist) ↗</a>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h2 class="section-title">최근 올라온 관찰</h2>
+            <a class="link" href="#map" data-goto="map">지도에서 보기 →</a>
+          </div>
+          <p class="muted small">사진은 관찰자가 CC 라이선스로 공개한 것만 보여 줍니다. 누르면 iNaturalist 원래 기록으로 이동합니다.</p>
+          <div class="obs-grid" id="join-recent"></div>
+        </div>
+
+        <div class="panel-grid">
+          <div class="panel">
+            <h2 class="section-title">최근 1년 많이 기록한 참여자</h2>
+            <div id="join-top"></div>
+          </div>
+          <div class="panel">
+            <h2 class="section-title">안전과 지켜야 할 것</h2>
+            <ul class="plain">
+              <li>붉은불개미·열대불개미·등검은말벌처럼 독침이 있는 곤충은 가까이 가거나 만지지 말고 멀리서 찍으세요. 불개미로 보이면 관할 지자체나 환경부에 신고하세요.</li>
+              <li>생태계교란 생물을 살아 있는 채로 옮기거나 풀어 주는 것은 법으로 금지되어 있습니다(「생물다양성 보전 및 이용에 관한 법률」).</li>
+              <li>사유지나 출입이 제한된 곳에는 들어가지 마세요. 집 주소가 드러나는 것이 걱정되면 iNaturalist의 ‘위치 흐리게’ 설정을 쓸 수 있습니다.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 자료 안내 -->
+    <section class="view" id="view-about">
+      <div class="page narrow-page">
+        <div class="page-head"><div><h1>자료 안내</h1></div></div>
+        <div class="panel">
+          <h3>지금 지도에 들어 있는 자료</h3>
+          <div id="about-status" class="status-box"></div>
+        </div>
+        <div class="panel">
+          <h3>자료는 어디서 오나요?</h3>
+          <ul class="plain">
+            <li><b>시민 관찰</b>: <a href="https://www.inaturalist.org" target="_blank" rel="noopener">iNaturalist</a>에 올라온 국내 관찰입니다. 10분마다 새로 올라오거나 상태가 바뀐 관찰을 받아 지도에 반영합니다.</li>
+            <li><b>기관·타 플랫폼 기록</b>: <a href="https://www.gbif.org" target="_blank" rel="noopener">GBIF</a>(세계생물다양성정보기구)에 공개된 국립생태원 조사, 네이처링 시민 관찰, 국립중앙과학관·국립수목원 표본 등입니다. iNaturalist 기록은 위에서 따로 받으므로 여기서는 빼서 중복을 막습니다.</li>
+            <li>각 기록의 팝업에서 원래 기록으로 이동할 수 있습니다.</li>
+          </ul>
+        </div>
+        <div class="panel">
+          <h3>지도를 볼 때 유의할 점</h3>
+          <ul class="plain">
+            <li>사람이 많이 다니는 도시·관광지에 기록이 몰리는 경향이 있습니다. 기록이 없다고 그 지역에 없다는 뜻은 아닙니다.</li>
+            <li>관찰자가 위치를 흐리게 설정했거나 오차가 큰 기록은 팝업에 표시됩니다.</li>
+            <li>‘확인 중’ 기록은 종이 틀렸을 수 있습니다. 정확한 분포가 필요하면 ‘검증된 것만’을 고르세요.</li>
+            <li>지정 목록은 위키백과·언론 보도를 종합한 것입니다. 법적 기준은 <a href="https://www.law.go.kr" target="_blank" rel="noopener">국가법령정보센터</a>의 「생태계교란 생물 지정 고시」입니다.</li>
+          </ul>
+        </div>
+        <div class="panel">
+          <h3>저작권과 출처</h3>
+          <ul class="plain">
+            <li>관찰 사진의 저작권은 각 관찰자에게 있으며, CC 라이선스로 공개된 사진만 출처와 함께 미리보기로 보여 줍니다.</li>
+            <li>배경지도: © OpenStreetMap contributors, 위성 영상 © Esri</li>
+            <li>행정구역 경계: 통계청 2013 시·도 경계(<a href="https://github.com/southkorea/southkorea-maps" target="_blank" rel="noopener">southkorea-maps</a>, 간소화본)</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="modal-backdrop" id="modal" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div class="modal-head">
+        <h2 id="modal-title"></h2>
+        <button class="icon-btn" id="modal-close" aria-label="닫기">✕</button>
+      </div>
+      <div class="modal-body" id="modal-body"></div>
+    </div>
+  </div>
+  <div class="toast" id="toast" hidden></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.heat/0.2.0/leaflet-heat.js"></script>
+  <script src="js/data-species.js"></script>
+  <script src="js/data-regions.js"></script>
+  <script src="js/util.js"></script>
+  <script src="js/geo.js"></script>
+  <script src="js/sources.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/map.js"></script>
+  <script src="js/views.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
