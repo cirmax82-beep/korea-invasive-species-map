@@ -3,7 +3,7 @@ App.sources = (() => {
   const INAT_API = "https://api.inaturalist.org/v2/observations";
   const PLACE_KOREA = 6891;
   const FIELDS = "id,quality_grade,observed_on,location,place_guess,obscured,positional_accuracy," +
-    "user.login,photos.url,photos.license_code,taxon.id,taxon.ancestor_ids";
+    "user.login,photos.url,photos.license_code,license_code,taxon.id,taxon.ancestor_ids";
   const BASIS = ["기타", "관찰", "표본", "기계 관측", "시료", "기록", "생체 표본"];
   const LICENSES = {
     cc0: "CC0", "cc-by": "CC BY", "cc-by-nc": "CC BY-NC", "cc-by-sa": "CC BY-SA", "cc-by-nd": "CC BY-ND",
@@ -50,8 +50,8 @@ App.sources = (() => {
 
   // ---------- iNaturalist ----------
   const toObs = (row) => {
-    const [id, lat, lng, date, q, acc, obsc, u, pl, ph, lic, np] = row;
-    return { id, lat, lng, date, y: Math.floor(date / 10000) || 0, q, acc, obsc, u, pl, ph, lic, np, reg: App.geo.regionOf(lat, lng) };
+    const [id, lat, lng, date, q, acc, obsc, u, pl, ph, lic, np, olic] = row;
+    return { id, lat, lng, date, y: Math.floor(date / 10000) || 0, q, acc, obsc, u, pl, ph, lic, np, olic: olic || "", reg: App.geo.regionOf(lat, lng) };
   };
 
   const loadInatSnapshot = async (url) => {
@@ -68,7 +68,7 @@ App.sources = (() => {
     const [ph, lic] = shortPhoto(o.photos);
     return toObs([o.id, lat, lng, Number(String(o.observed_on || "0").replace(/-/g, "")) || 0,
       o.quality_grade === "research" ? 1 : 0, o.positional_accuracy == null ? -1 : o.positional_accuracy,
-      o.obscured ? 1 : 0, (o.user || {}).login || "", (o.place_guess || "").slice(0, 60), ph, lic, (o.photos || []).length]);
+      o.obscured ? 1 : 0, (o.user || {}).login || "", (o.place_guess || "").slice(0, 60), ph, lic, (o.photos || []).length, o.license_code || ""]);
   };
 
   // 지정 종의 iNaturalist 분류 ID → 앱의 종 ID
@@ -153,11 +153,14 @@ App.sources = (() => {
         lat: Float32Array.from(s.lat), lng: Float32Array.from(s.lng), year: Int16Array.from(s.year),
         region: Int8Array.from(s.region), key: Float64Array.from(s.key), basis: Uint8Array.from(s.basis),
         ds: Int16Array.from(s.ds || []),
+        date: Int32Array.from(s.date || new Array(n).fill(0)),
+        unc: Int32Array.from(s.unc || new Array(n).fill(-1)),
+        lic: Uint8Array.from(s.lic || new Array(n).fill(0)),
       };
       for (let i = 0; i < n; i++) if (e.region[i] < 0) e.region[i] = App.geo.regionOf(e.lat[i], e.lng[i]);
       entries[speciesId] = e;
     });
-    return { entries, datasets: snap.datasets || [], at: snap.generatedAt };
+    return { entries, datasets: snap.datasets || [], licenses: snap.licenses || ["", "CC0", "CC BY", "CC BY-NC"], at: snap.generatedAt };
   };
 
   return {

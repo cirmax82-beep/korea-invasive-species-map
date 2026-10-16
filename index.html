@@ -157,6 +157,7 @@
             <p class="muted">시·도별, 분류군별, 시기별 교란생물 기록 현황입니다.</p>
           </div>
           <div class="actions">
+            <button class="btn btn-primary" id="stats-export">📥 연구용 자료 내려받기</button>
             <div class="segmented" id="stats-source">
               <button data-src="all" class="active">전체</button>
               <button data-src="citizen">시민 관찰</button>
@@ -265,6 +266,18 @@
           <div id="about-status" class="status-box"></div>
         </div>
         <div class="panel">
+          <div class="panel-head">
+            <h3>연구용 자료 내려받기</h3>
+            <button class="btn btn-primary btn-sm" id="about-export">📥 내려받기</button>
+          </div>
+          <ul class="plain">
+            <li><b>엑셀(.xlsx)</b>: 원자료와 함께 종별·시도별 요약, 시도×종 기록 수와 출현 여부(0/1), 연도×종, 시도×연도, 연월별 추이, 분류군별 요약, 자료 출처, 0.1° 격자 집계를 시트별로 담습니다.</li>
+            <li><b>CSV</b>: 원자료 한 표(위치·관찰일·출처·라이선스·원본 주소). R·Python에 바로 읽을 수 있습니다.</li>
+            <li><b>GeoJSON</b>: QGIS 같은 GIS 프로그램용 지점 자료.</li>
+            <li>열 이름은 한글 또는 영문(Darwin Core 용어) 중에서 고를 수 있고, 지도에 걸어 둔 조건 그대로 받을 수도 있습니다.</li>
+          </ul>
+        </div>
+        <div class="panel">
           <h3>자료는 어디서 오나요?</h3>
           <ul class="plain">
             <li><b>시민 관찰</b>: <a href="https://www.inaturalist.org" target="_blank" rel="noopener">iNaturalist</a>에 올라온 국내 관찰입니다. 10분마다 새로 올라오거나 상태가 바뀐 관찰을 받아 지도에 반영합니다.</li>
@@ -315,6 +328,7 @@
   <script src="js/data.js"></script>
   <script src="js/map.js"></script>
   <script src="js/views.js"></script>
+  <script src="js/export.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

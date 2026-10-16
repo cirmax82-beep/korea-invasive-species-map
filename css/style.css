@@ -473,3 +473,18 @@ table.matrix tbody th .dot { margin-right: 6px; width: 8px; height: 8px; }
 @media (max-width: 560px) {
   .steps { grid-template-columns: 1fr; }
 }
+
+/* ---------- 연구용 자료 내려받기 ---------- */
+.export-form { display: flex; flex-direction: column; gap: 14px; }
+.export-form fieldset { border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px 12px; margin: 0; min-width: 0; }
+.export-form fieldset[disabled] { opacity: .5; }
+.export-form legend { font-size: 12px; font-weight: 700; color: var(--text-2); padding: 0 4px; }
+.export-form .check input { accent-color: var(--primary); }
+.sheet-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px 14px; }
+.sheet-check { align-items: flex-start; }
+.sheet-check input { margin-top: 3px; }
+.sheet-check span { display: flex; flex-direction: column; line-height: 1.35; min-width: 0; }
+.sheet-check small { color: var(--muted); font-size: 11px; }
+.export-foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.export-foot .muted { font-variant-numeric: tabular-nums; }
+@media (max-width: 560px) { .sheet-grid { grid-template-columns: 1fr; } }

@@ -9,6 +9,7 @@ App.state = {
   inatSyncedAt: null,    // 마지막 실시간 갱신 시각(Date)
   gbif: {},              // speciesId → 압축 엔트리
   gbifDatasets: [],
+  gbifLicenses: [],
   gbifAt: null,
   filters: {
     groups: new Set(Object.keys(window.TAXON_GROUPS)),

@@ -261,6 +261,8 @@
       if (sp) App.views.speciesDetail(sp.dataset.sp);
     });
     $("#matrix-csv").onclick = App.views.matrixCSV;
+    $("#stats-export").onclick = () => App.exporter.openDialog("all");
+    $("#about-export").onclick = () => App.exporter.openDialog("all");
 
     // 모달
     $("#modal-close").onclick = closeModal;
@@ -285,6 +287,7 @@
     if (gbif.status === "fulfilled") {
       S.gbif = gbif.value.entries;
       S.gbifDatasets = gbif.value.datasets;
+      S.gbifLicenses = gbif.value.licenses;
       S.gbifAt = gbif.value.at;
     } else {
       console.warn("GBIF 자료를 읽지 못했습니다", gbif.reason);

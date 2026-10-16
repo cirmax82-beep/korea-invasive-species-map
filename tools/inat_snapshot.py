@@ -21,7 +21,7 @@ API = "https://api.inaturalist.org/v2/observations"
 PLACE_KOREA = 6891
 UA = {"User-Agent": "invasive-species-map-korea/1.0 (citizen science map; snapshot)"}
 FIELDS = ("id,quality_grade,observed_on,location,place_guess,obscured,positional_accuracy,"
-          "user.login,photos.url,photos.license_code")
+          "user.login,photos.url,photos.license_code,license_code")
 
 
 def get(url):
@@ -61,7 +61,7 @@ def pack(o):
     return [o["id"], round(lat, 5), round(lng, 5), date, 1 if o["quality_grade"] == "research" else 0,
             -1 if acc is None else int(acc), 1 if o.get("obscured") else 0,
             (o.get("user") or {}).get("login", ""), (o.get("place_guess") or "")[:60], photo, lic,
-            len(o.get("photos") or [])]
+            len(o.get("photos") or []), o.get("license_code") or ""]
 
 
 def fetch_species(taxon_id):
@@ -115,7 +115,7 @@ def main():
         "generatedAt": started.isoformat(timespec="seconds"),
         "source": "iNaturalist (place_id=6891, verifiable=true)",
         "place_id": PLACE_KOREA,
-        "columns": ["id", "lat", "lng", "date", "verified", "accuracy_m", "obscured", "user", "place", "photo", "license", "photos"],
+        "columns": ["id", "lat", "lng", "date", "verified", "accuracy_m", "obscured", "user", "place", "photo", "photo_license", "photos", "obs_license"],
         "taxa": taxa,
         "obs": obs,
     }

@@ -21,6 +21,21 @@ PAGE = 300
 MAX_PER_SPECIES = 12000
 # iNaturalist 검증 관찰은 앱이 iNaturalist에서 직접 받으므로 GBIF에서는 뺌(중복 방지)
 INAT_DATASET = "50c9509d-22c7-4a22-a47d-8c48425ef4a7"
+# 기록 라이선스 → 번호 (앱이 'CC0', 'CC BY', 'CC BY-NC'로 표시)
+LICENSES = ["", "CC0", "CC BY", "CC BY-NC"]
+
+
+def license_code(url):
+    u = (url or "").lower()
+    if "zero" in u or "cc0" in u:
+        return 1
+    if "by-nc" in u:
+        return 3
+    if "/by/" in u or "by_4" in u:
+        return 2
+    return 0
+
+
 BASIS_CODE = {
     "HUMAN_OBSERVATION": 1, "OBSERVATION": 1, "PRESERVED_SPECIMEN": 2, "MACHINE_OBSERVATION": 3,
     "MATERIAL_SAMPLE": 4, "OCCURRENCE": 5, "LIVING_SPECIMEN": 6,
@@ -64,7 +79,7 @@ def species_records(sp, gadm):
     results = list(first["results"])
     for off in range(PAGE, min(total, MAX_PER_SPECIES), PAGE):
         results.extend(fetch(key, off)["results"])
-    seen, cols = set(), {k: [] for k in ("lat", "lng", "year", "key", "region", "basis", "ds")}
+    seen, cols = set(), {k: [] for k in ("lat", "lng", "year", "date", "unc", "lic", "key", "region", "basis", "ds")}
     for r in results:
         if r.get("decimalLatitude") is None or r["key"] in seen or r.get("datasetKey") == INAT_DATASET:
             continue
@@ -73,6 +88,12 @@ def species_records(sp, gadm):
         cols["lat"].append(round(r["decimalLatitude"], 5))
         cols["lng"].append(round(r["decimalLongitude"], 5))
         cols["year"].append(r.get("year") or 0)
+        # 관찰일(YYYYMMDD 정수, 모르는 월·일은 0) — 연구용 내려받기에 사용
+        y, m, d = r.get("year") or 0, r.get("month") or 0, r.get("day") or 0
+        cols["date"].append(y * 10000 + m * 100 + d if y else 0)
+        unc = r.get("coordinateUncertaintyInMeters")
+        cols["unc"].append(-1 if unc is None else int(unc))
+        cols["lic"].append(license_code(r.get("license")))
         cols["key"].append(r["key"])
         cols["region"].append(gadm.get(gid, -1))   # -1이면 앱이 좌표로 판별
         cols["basis"].append(BASIS_CODE.get(r.get("basisOfRecord"), 0))
@@ -116,6 +137,7 @@ def main():
     out = {
         "generatedAt": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "source": "GBIF.org occurrence search (country=KR, iNaturalist 제외)",
+        "licenses": LICENSES,
         "datasets": [[k, *titles[k]] for k in keys],   # [키, 제목, 기관]
         "species": entries,
     }
