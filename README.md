@@ -10,7 +10,9 @@
 - **공개 지도**: https://invasive.biogrideia.com/
 - **참여 안내 바로가기**(홍보용): https://invasive.biogrideia.com/#join
 - 예전 주소(`cirmax82-beep.github.io/korea-invasive-species-map/`)로 들어와도 새 주소로 자동으로 넘어갑니다.
-- 새 주소는 호스팅케이알 DNS의 CNAME 레코드(`invasive` → `cirmax82-beep.github.io`)로 연결되어 있습니다. 이 레코드를 지우면 사이트가 열리지 않습니다.
+- 새 주소는 호스팅케이알 DNS 레코드 두 개로 연결·보호됩니다. 지우지 마세요.
+  - `CNAME invasive → cirmax82-beep.github.io`: 사이트 연결(지우면 사이트가 열리지 않음)
+  - `TXT _github-pages-challenge-cirmax82-beep`: GitHub 도메인 소유 인증(지우면 다른 사람이 biogrideia.com 하위 주소를 GitHub Pages에 연결할 수 있게 됨)
 
 ## 화면
 
