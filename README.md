@@ -7,8 +7,10 @@
 
 서버나 회원 관리가 필요 없는 정적 웹사이트라서, 파일을 웹 호스팅에 올리기만 하면 누구나 볼 수 있습니다.
 
-- **공개 지도**: https://cirmax82-beep.github.io/korea-invasive-species-map/
-- **참여 안내 바로가기**(홍보용): https://cirmax82-beep.github.io/korea-invasive-species-map/#join
+- **공개 지도**: https://invasive.biogrideia.com/
+- **참여 안내 바로가기**(홍보용): https://invasive.biogrideia.com/#join
+- 예전 주소(`cirmax82-beep.github.io/korea-invasive-species-map/`)로 들어와도 새 주소로 자동으로 넘어갑니다.
+- 새 주소는 호스팅케이알 DNS의 CNAME 레코드(`invasive` → `cirmax82-beep.github.io`)로 연결되어 있습니다. 이 레코드를 지우면 사이트가 열리지 않습니다.
 
 ## 화면
 

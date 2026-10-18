@@ -3,7 +3,7 @@ App.exporter = (() => {
   const { $, esc, fmt, toCSV, download, toast } = App.util;
   const S = App.state;
   const XLSX_URL = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
-  const SITE = "https://cirmax82-beep.github.io/korea-invasive-species-map/";
+  const SITE = "https://invasive.biogrideia.com/";
 
   // 엑셀 도구는 내려받을 때만 불러옴(약 0.9 MB)
   let xlsxP = null;
