@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://invasive.biogrideia.com/sitemap.xml
